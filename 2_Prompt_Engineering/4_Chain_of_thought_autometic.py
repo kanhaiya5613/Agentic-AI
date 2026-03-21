@@ -3,7 +3,7 @@
 from openai import OpenAI
 import json
 client = OpenAI(
-    api_key="AIzaSyACuIywxG4epmg9ncNnlJFCNtYnLFJRSfI",
+    api_key="AIzaSyCIlotwaRVzZs1TUwEBo3l4ZqIROxrE7lU",
     base_url="https://generativelanguage.googleapis.com/v1beta/"
 )
 SYSTEM_PROMPT = """
