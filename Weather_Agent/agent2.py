@@ -12,8 +12,9 @@ load_dotenv()
 # Initialize the client with the Gemini-OpenAI bridge
 client = OpenAI(
     api_key=os.getenv("GOOGLE_API_KEY"),
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
 )
+
 
 def get_weather(city: str):
     url = f"https://wttr.in/{city.lower()}?format=%C+%t"
@@ -25,9 +26,8 @@ def get_weather(city: str):
         pass
     return "Error: Unable to fetch weather data."
 
-available_tools = {
-    "get_weather": get_weather
-}
+
+available_tools = {"get_weather": get_weather}
 
 SYSTEM_PROMPT = """
 you're an expert AI assistant in resolving user queries using chain of thought.
@@ -79,8 +79,12 @@ OUTPUT: {"step": "OUTPUT", "content": "I am sorry, I currently only have the abi
 
 
 class MyOutputFormat(BaseModel):
-    step: str = Field(..., description="The ID of the step. Example: PLAN, OUTPUT, TOOL, etc")
-    content: Optional[str] = Field(None, description="The Optional String content for the step")
+    step: str = Field(
+        ..., description="The ID of the step. Example: PLAN, OUTPUT, TOOL, etc"
+    )
+    content: Optional[str] = Field(
+        None, description="The Optional String content for the step"
+    )
     tool: Optional[str] = Field(None, description="the ID of the tool to call.")
     input: Optional[str] = Field(None, description="the input params for the tool")
 
@@ -97,17 +101,16 @@ def main():
             response = client.chat.completions.parse(
                 model="gemini-2.5-flash",
                 response_format=MyOutputFormat,
-                messages=message_history
+                messages=message_history,
             )
 
             raw_result = response.choices[0].message.content
             message_history.append({"role": "assistant", "content": raw_result})
 
-            # ✅ FIX 1: Use attribute access on Pydantic object, not .get()
+            
             parsed_result = response.choices[0].message.parsed
 
             if parsed_result.step == "PLAN":
-                # ✅ FIX 1: was parsed_result.get('content') — wrong for Pydantic
                 print(f"🧠 [PLANNING]: {parsed_result.content}")
                 continue
 
@@ -115,7 +118,6 @@ def main():
                 tool_to_call = parsed_result.tool
                 tool_input = parsed_result.input
 
-                # ✅ FIX 2: Guard against None tool name or input
                 if not tool_to_call or not tool_input:
                     print("❌ Error: Tool name or input is missing.")
                     break
@@ -127,20 +129,22 @@ def main():
                     observation_data = {
                         "step": "OBSERVE",
                         "tool": tool_to_call,
-                        "output": tool_response
+                        "output": tool_response,
                     }
-                    # ✅ FIX 3: Observation should come from "user" role so model can read it
-                    message_history.append({"role": "user", "content": json.dumps(observation_data)})
+                    message_history.append(
+                        {"role": "user", "content": json.dumps(observation_data)}
+                    )
                     print(f"👁️  [OBSERVE]: {tool_response}")
                 else:
                     print(f"❌ Error: Tool '{tool_to_call}' not found.")
-                    # ✅ FIX 4: Inform the model instead of just breaking
                     error_data = {
                         "step": "OBSERVE",
                         "tool": tool_to_call,
-                        "output": f"Tool '{tool_to_call}' is not available."
+                        "output": f"Tool '{tool_to_call}' is not available.",
                     }
-                    message_history.append({"role": "user", "content": json.dumps(error_data)})
+                    message_history.append(
+                        {"role": "user", "content": json.dumps(error_data)}
+                    )
                 continue
 
             elif parsed_result.step == "OUTPUT":
@@ -148,7 +152,6 @@ def main():
                 break
 
             else:
-                # ✅ FIX 5: Handle unexpected step values gracefully
                 print(f"⚠️  Unknown step '{parsed_result.step}', skipping...")
                 continue
 
@@ -156,6 +159,4 @@ def main():
             print(f"❌ Critical Loop Error: {e}")
             break
 
-
-if __name__ == "__main__":
-    main()
+main()
