@@ -16,3 +16,7 @@ def chat(
     job = queue.enqueue(process_query, query)
 
     return {"status":"queued", "job_id":job.id}
+
+def get_result(
+    job_id: str = Query(..., description=)
+)
