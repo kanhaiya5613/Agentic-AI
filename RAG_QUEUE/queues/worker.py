@@ -1,5 +1,5 @@
 from openai import OpenAI
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from dotenv import load_dotenv
 import os
